@@ -15,7 +15,6 @@
 
 using System;
 using System.Net;
-using System.Text.Json.Nodes;
 using MySqlConnector;
 
 namespace DeutscheBahnToDB 
@@ -36,11 +35,11 @@ namespace DeutscheBahnToDB
             string[] tableNames;
             
             //DatabaseCredentials
-            string databaseIP = "REMOVED_FOR_SECURITY_REASON";
-            string databasePort = "REMOVED_FOR_SECURITY_REASON";
-            string databasePasswort = "REMOVED_FOR_SECURITY_REASON";
-            string databaseUsername = "REMOVED_FOR_SECURITY_REASON";
-            string databaseName = "REMOVED_FOR_SECURITY_REASON";
+            string databaseIP = "REDACTED_FOR_SECURITY_REASONS";
+            string databasePort = "REDACTED_FOR_SECURITY_REASONS";
+            string databasePasswort = "REDACTED_FOR_SECURITY_REASONS";
+            string databaseUsername = "REDACTED_FOR_SECURITY_REASONS";
+            string databaseName = "REDACTED_FOR_SECURITY_REASONS";
             string SQLConnectionString = "Server=" + databaseIP + ";Port=" + databasePort +";User ID=" + databaseUsername + ";Password=" + databasePasswort + ";Database=" + databaseName;
 
             // Get current time
@@ -78,6 +77,9 @@ namespace DeutscheBahnToDB
                     //Hier wird der Programmteil aufgerufen welcher in der Datenbank die entsprechenden Änderungen macht
                     dropAndRecreateTable(columnList, tableNames[currentFile], SQLConnectionString);
 
+                    //Hier werden die Daten in die Datenbank eingefügt
+                    writeDataToTable(dataFromServer, tableNames[currentFile], SQLConnectionString, columnList);
+                    
                     currentFile++;
                 }
             }
@@ -123,8 +125,6 @@ namespace DeutscheBahnToDB
             string responseFromServer = GetWebData(sourceList);
             string[] dataList = SplitToArray(responseFromServer, "\n");
             
-            Console.WriteLine(responseFromServer);
-            
             return dataList;
         }
 
@@ -144,7 +144,6 @@ namespace DeutscheBahnToDB
         static string[] GetDataFromServer(string currentFileLink)
         {
             string responseFromServer = GetWebData(currentFileLink);
-            //Console.WriteLine(responseFromServer);
             
             string[] dataList = SplitToArray(responseFromServer, "\n");
             return dataList;
@@ -186,9 +185,81 @@ namespace DeutscheBahnToDB
             command1.ExecuteNonQuery();
         }
 
-        static void writeDataToTable(string data, string tableName)
+        static void writeDataToTable(string[] data, string tableName, string SQLConnectionString, string[] columnlist)
         {
+            using var connection = new MySqlConnection(SQLConnectionString);
+            connection.Open();
             
+            int currentRow = 0;
+            int columnCount = columnlist.Length;
+
+            foreach (string row in data)
+            {
+                string[] currentDataToWrite;
+                string sql;
+                string tempsql = "";
+                
+                //Erste Zeile überspringen, da darin die Namen der Spalten genannt sind
+                if (currentRow != 0)
+                {
+                    currentDataToWrite = SplitToArray(row, ";");
+                    sql = "INSERT INTO " + tableName + " VALUES (";
+                    
+                    //Console.WriteLine("Anzahl der Spalten: " + currentDataToWrite.Length);
+                    
+                    if (currentDataToWrite.Length > columnCount)
+                    {
+                        int currentLineTemp = 0;
+                        string currentToRemember = "";
+                        
+                        foreach (string dataset in currentDataToWrite)
+                        {
+                            if (currentLineTemp == 7)
+                            {
+                                currentToRemember = dataset;
+                            }
+                            else if (currentLineTemp == 8)
+                            {
+                                currentToRemember = currentToRemember + dataset;
+                                tempsql = tempsql + "'" + currentToRemember + "',";
+                            }
+                            else
+                            {
+                                tempsql = tempsql + "'" + dataset + "',";
+                            }
+
+                            //Console.WriteLine(dataset);
+                            currentLineTemp++;
+                        }
+                    
+                        tempsql = tempsql.Remove(tempsql.Length - 1, 1);
+                        sql = sql + tempsql + ")";
+                    
+                        using var command = new MySqlCommand(sql, connection);
+                        command.ExecuteNonQuery();
+                    }
+                    else if(currentDataToWrite.Length > 0)
+                    {
+                        foreach (string dataset in currentDataToWrite)
+                        {
+                            tempsql = tempsql + "'" + dataset + "',";
+                            //Console.WriteLine(dataset);
+                        }
+                    
+                        tempsql = tempsql.Remove(tempsql.Length - 1, 1);
+                        sql = sql + tempsql + ")";
+                    
+                        using var command = new MySqlCommand(sql, connection);
+                        command.ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        //Do nothing
+                    }
+                }
+
+                currentRow++;
+            }
         }
 
         static string[] rewriteColumns(string[] columnsToRewrite)
