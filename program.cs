@@ -35,11 +35,11 @@ namespace DeutscheBahnToDB
             string[] tableNames;
             
             //DatabaseCredentials
-            string databaseIP = "REDACTED_FOR_PRIVACY_REASONS";
-            string databasePort = "REDACTED_FOR_PRIVACY_REASONS";
-            string databasePasswort = "REDACTED_FOR_PRIVACY_REASONS";
-            string databaseUsername = "REDACTED_FOR_PRIVACY_REASONS";
-            string databaseName = "REDACTED_FOR_PRIVACY_REASONS";
+            string databaseIP = "REMOVED_FOR_SECURITY_REASON";
+            string databasePort = "REMOVED_FOR_SECURITY_REASON";
+            string databasePasswort = "REMOVED_FOR_SECURITY_REASON";
+            string databaseUsername = "REMOVED_FOR_SECURITY_REASON";
+            string databaseName = "REMOVED_FOR_SECURITY_REASON";
             string SQLConnectionString = "Server=" + databaseIP + ";Port=" + databasePort +";User ID=" + databaseUsername + ";Password=" + databasePasswort + ";Database=" + databaseName;
 
             // Get current time
@@ -184,7 +184,7 @@ namespace DeutscheBahnToDB
             
             //Anschließend muss eine neue Tabelle erstellt werden mit entsprechenden Spalten
             using var command1 = new MySqlCommand(sql, connection);
-            Console.WriteLine("CREATE TABLE " + tableName + "(" + tempsql + ");");
+            //Console.WriteLine("CREATE TABLE " + tableName + "(" + tempsql + ");");
             command1.ExecuteNonQuery();
         }
 
@@ -238,7 +238,7 @@ namespace DeutscheBahnToDB
                         tempsql = tempsql.Remove(tempsql.Length - 1, 1);
                         sql = sql + tempsql + ")";
                     
-                        Console.WriteLine(sql);
+                        //Console.WriteLine(sql);
                         using var command = new MySqlCommand(sql, connection);
                         command.ExecuteNonQuery();
                     }
@@ -253,7 +253,7 @@ namespace DeutscheBahnToDB
                         tempsql = tempsql.Remove(tempsql.Length - 1, 1);
                         sql = sql + tempsql + ")";
                     
-                        Console.WriteLine(sql);
+                        //Console.WriteLine(sql);
                         using var command = new MySqlCommand(sql, connection);
                         command.ExecuteNonQuery();
                     }
