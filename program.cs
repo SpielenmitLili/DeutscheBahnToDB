@@ -35,11 +35,11 @@ namespace DeutscheBahnToDB
             string[] tableNames;
             
             //DatabaseCredentials
-            string databaseIP = "REDACTED_FOR_SECURITY_REASONS";
-            string databasePort = "REDACTED_FOR_SECURITY_REASONS";
-            string databasePasswort = "REDACTED_FOR_SECURITY_REASONS";
-            string databaseUsername = "REDACTED_FOR_SECURITY_REASONS";
-            string databaseName = "REDACTED_FOR_SECURITY_REASONS";
+            string databaseIP = "REDACTED_FOR_PRIVACY_REASONS";
+            string databasePort = "REDACTED_FOR_PRIVACY_REASONS";
+            string databasePasswort = "REDACTED_FOR_PRIVACY_REASONS";
+            string databaseUsername = "REDACTED_FOR_PRIVACY_REASONS";
+            string databaseName = "REDACTED_FOR_PRIVACY_REASONS";
             string SQLConnectionString = "Server=" + databaseIP + ";Port=" + databasePort +";User ID=" + databaseUsername + ";Password=" + databasePasswort + ";Database=" + databaseName;
 
             // Get current time
@@ -175,13 +175,16 @@ namespace DeutscheBahnToDB
             //Hier werden alle Spalten in ein Abschnitt umgeschrieben
             foreach (var column in columns)
             {
-                tempsql = tempsql + column + " varchar(255),";
+                tempsql = tempsql + column + " varchar(100),";
             }
 
             tempsql = tempsql.Remove(tempsql.Length - 1, 1);
+
+            sql = "CREATE TABLE " + tableName + "(" + tempsql + ");";
             
             //Anschließend muss eine neue Tabelle erstellt werden mit entsprechenden Spalten
-            using var command1 = new MySqlCommand("CREATE TABLE " + tableName + "(" + tempsql + ");", connection);
+            using var command1 = new MySqlCommand(sql, connection);
+            Console.WriteLine("CREATE TABLE " + tableName + "(" + tempsql + ");");
             command1.ExecuteNonQuery();
         }
 
@@ -216,16 +219,16 @@ namespace DeutscheBahnToDB
                         {
                             if (currentLineTemp == 7)
                             {
-                                currentToRemember = dataset;
+                                currentToRemember = dataset.Trim();
                             }
                             else if (currentLineTemp == 8)
                             {
-                                currentToRemember = currentToRemember + dataset;
+                                currentToRemember = currentToRemember + dataset.Trim();
                                 tempsql = tempsql + "'" + currentToRemember + "',";
                             }
                             else
                             {
-                                tempsql = tempsql + "'" + dataset + "',";
+                                tempsql = tempsql + "'" + dataset.Trim() + "',";
                             }
 
                             //Console.WriteLine(dataset);
@@ -235,10 +238,11 @@ namespace DeutscheBahnToDB
                         tempsql = tempsql.Remove(tempsql.Length - 1, 1);
                         sql = sql + tempsql + ")";
                     
+                        Console.WriteLine(sql);
                         using var command = new MySqlCommand(sql, connection);
                         command.ExecuteNonQuery();
                     }
-                    else if(currentDataToWrite.Length > 0)
+                    else if(currentDataToWrite.Length == columnCount)
                     {
                         foreach (string dataset in currentDataToWrite)
                         {
@@ -249,6 +253,7 @@ namespace DeutscheBahnToDB
                         tempsql = tempsql.Remove(tempsql.Length - 1, 1);
                         sql = sql + tempsql + ")";
                     
+                        Console.WriteLine(sql);
                         using var command = new MySqlCommand(sql, connection);
                         command.ExecuteNonQuery();
                     }
