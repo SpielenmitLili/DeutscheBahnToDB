@@ -268,9 +268,11 @@ namespace DeutscheBahnToDB
                     {
                         foreach (string dataset in currentDataToWrite)
                         {
-                            string datasetManipulated = dataset.Replace("'", "^");
+                            //Fix Sonderzeichen und andere String Probleme
+                            string datasetManipulated = RewriteString(dataset);
+
                             tempsql = tempsql + "'" + datasetManipulated + "',";
-                            //Console.WriteLine(dataset);
+                            //Console.WriteLine(datasetManipulated);
                         }
                     
                         tempsql = tempsql.Remove(tempsql.Length - 1, 1);
@@ -326,6 +328,15 @@ namespace DeutscheBahnToDB
             }
 
             return rewrittenColumns;
+        }
+
+        static string RewriteString(string stringToRewrite)
+        {
+            string datasetManipulated = stringToRewrite.Replace("'", "^");
+            datasetManipulated = datasetManipulated.Replace("�", "");
+            datasetManipulated = datasetManipulated.Replace("�", "ü");
+
+            return datasetManipulated;
         }
 
         static void WriteResults(string[] resultsByColumn, int allResults)
