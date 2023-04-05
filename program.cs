@@ -25,8 +25,7 @@ namespace DeutscheBahnToDB
         {
             // Define all needed variables
             int allRecords = 0;
-            int notFoundRecords = 0;
-            int foundRecords = 0;
+            string[] recordsByTable = new String[100];
             string sourceList = "https://spielenmitlili.com/media/static/db/sourceList/list.txt";
             string sourceListTables = "https://spielenmitlili.com/media/static/db/tables/list.txt";;
             string[] dataList;
@@ -41,6 +40,10 @@ namespace DeutscheBahnToDB
             string databaseUsername = "REMOVED_FOR_SECURITY_REASON";
             string databaseName = "REMOVED_FOR_SECURITY_REASON";
             string SQLConnectionString = "Server=" + databaseIP + ";Port=" + databasePort +";User ID=" + databaseUsername + ";Password=" + databasePasswort + ";Database=" + databaseName;
+            
+            //Versionverwaltung
+            string version = "alpha-0.0.1";
+            string versionCheckServer = "https://spielenmitlili.com/media/static/software-update/db/version.txt";;
 
             // Get current time
             string currentTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
@@ -60,6 +63,9 @@ namespace DeutscheBahnToDB
 
             try
             {
+                //Überprüfe ob Updates vorhanden sind bevor das Programm läuft um zu verhindern, dass das Programm etwas macht, was nicht gemacht werden sollte
+                SoftwareUpdate(version, versionCheckServer);
+                
                 //Zuerst muss abgerufen werden welche Listen überhaupt von der DB geliefert werden damit mit denen weiter gearbeitet werden kann
                 dataList = GetDatalist(sourceList);
                 tableNames = GetDatalist(sourceListTables);
@@ -75,13 +81,29 @@ namespace DeutscheBahnToDB
                     columnList = GetColumns(dataFromServer[0]);
                     
                     //Hier wird der Programmteil aufgerufen welcher in der Datenbank die entsprechenden Änderungen macht
-                    dropAndRecreateTable(columnList, tableNames[currentFile], SQLConnectionString);
+                    if (dataFromServer[0] != "")
+                    {
+                        dropAndRecreateTable(columnList, tableNames[currentFile], SQLConnectionString);
 
-                    //Hier werden die Daten in die Datenbank eingefügt
-                    writeDataToTable(dataFromServer, tableNames[currentFile], SQLConnectionString, columnList);
+                        //Hier werden die Daten in die Datenbank eingefügt
+                        writeDataToTable(dataFromServer, tableNames[currentFile], SQLConnectionString, columnList);
+                    }
+                    else
+                    {
+                        throw new Exception("Es ist ein Fehler beim Herunterladen der Daten von " + data + " aufgetreten! Es konnten keine Daten gefunden werden! Programm hat den Import abgebrochen und die aktuelle Tabelle nicht geändert!");
+                    }
                     
+                    
+                    //Hier werden die Anzahl der Datensätze in eine Variable geschrieben damit wir am Ende eine Information über Anzahl der Datensätze bekommen
+                    allRecords = allRecords + dataFromServer.Length;
+                    
+                    recordsByTable[currentFile] = tableNames[currentFile] + " <> " + dataFromServer.Length.ToString();
+
                     currentFile++;
                 }
+
+                
+                WriteResults(recordsByTable, allRecords);
             }
             catch (Exception error)
             {
@@ -210,7 +232,7 @@ namespace DeutscheBahnToDB
                     
                     //Console.WriteLine("Anzahl der Spalten: " + currentDataToWrite.Length);
                     
-                    if (currentDataToWrite.Length > columnCount)
+                    if (currentDataToWrite.Length > columnCount && tableName == "Bahnhoefe")
                     {
                         int currentLineTemp = 0;
                         string currentToRemember = "";
@@ -246,15 +268,16 @@ namespace DeutscheBahnToDB
                     {
                         foreach (string dataset in currentDataToWrite)
                         {
-                            tempsql = tempsql + "'" + dataset + "',";
+                            string datasetManipulated = dataset.Replace("'", "^");
+                            tempsql = tempsql + "'" + datasetManipulated + "',";
                             //Console.WriteLine(dataset);
                         }
                     
                         tempsql = tempsql.Remove(tempsql.Length - 1, 1);
                         sql = sql + tempsql + ")";
-                    
-                        //Console.WriteLine(sql);
+                        
                         using var command = new MySqlCommand(sql, connection);
+                        //Console.WriteLine(sql);
                         command.ExecuteNonQuery();
                     }
                     else
@@ -265,6 +288,10 @@ namespace DeutscheBahnToDB
 
                 currentRow++;
             }
+            // Get current time
+            string currentTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+            
+            Console.WriteLine(currentTime + " | Tabelle " + tableName + " wurde erfolgreich befüllt!");
         }
 
         static string[] rewriteColumns(string[] columnsToRewrite)
@@ -279,10 +306,18 @@ namespace DeutscheBahnToDB
                 changedColumn = column.Replace(". ", "_");
                 changedColumn = changedColumn.Replace(".", "");
                 changedColumn = changedColumn.Replace("ß", "ss");
+                changedColumn = changedColumn.Replace("Ä", "Ae");
                 changedColumn = changedColumn.Replace("ä", "ae");
+                changedColumn = changedColumn.Replace("Ö", "Oe");
                 changedColumn = changedColumn.Replace("ö", "oe");
+                changedColumn = changedColumn.Replace("Ü", "Ue");
                 changedColumn = changedColumn.Replace("ü", "ue");
                 changedColumn = changedColumn.Replace(" ", "");
+                changedColumn = changedColumn.Replace("(", "");
+                changedColumn = changedColumn.Replace(")", "");
+                changedColumn = changedColumn.Replace("-", "");
+                changedColumn = changedColumn.Replace("[", "");
+                changedColumn = changedColumn.Replace("]", "");
 
                 //Schreibe in an die richtige Stelle
                 rewrittenColumns[currentIndex] = changedColumn;
@@ -291,6 +326,64 @@ namespace DeutscheBahnToDB
             }
 
             return rewrittenColumns;
+        }
+
+        static void WriteResults(string[] resultsByColumn, int allResults)
+        {
+            // Get current time
+            string currentTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+            
+            Console.WriteLine(" ");
+            Console.WriteLine(" ");
+            Console.WriteLine(" ");
+            
+            Console.WriteLine(currentTime + " | Der Datenimport ist erfolgreich gewesen! Ergebnisse werden geladen...");
+            Console.WriteLine(" ");
+            
+            Console.WriteLine(currentTime + " | Gesamtanzahl der Datensätze: " + allResults.ToString());
+
+            foreach (var result in resultsByColumn)
+            {
+                if (result != null && result != "")
+                {
+                    string[] resultToOutput = result.Split(" <> ");
+                    Console.WriteLine(currentTime + " | Tabelle: " + resultToOutput[0] + " mit " + resultToOutput[1] + " Datensätzen");
+                }
+            }
+            
+            Console.WriteLine(" ");
+            Console.WriteLine(" ");
+            Console.WriteLine(" ");
+        }
+
+        static void SoftwareUpdate(string version, string updateserver)
+        {
+            // Get current time
+            string currentTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+            
+            //Prüfe die aktuell neuste Version
+            string[] currentVersion = GetDatalist(updateserver);
+
+            Console.WriteLine(" ");
+            
+            if (currentVersion[0] == version)
+            {
+                Console.WriteLine(currentTime + " | Die von dir genutzte Version des Programms ist aktuell! Viel Spaß bei der Nutzung");
+            }
+            else
+            {
+                Console.WriteLine("#############################################################################");
+                Console.WriteLine(currentTime + " | Du benutzt nicht die neuste Version von DeutscheBahnToDB!!!");
+                Console.WriteLine(currentTime + " | Wenn du fortfährst kann das zu Problemen führen");
+                Console.WriteLine(currentTime + " | Wir empfehlen die neuste Version des Programms unter https://git.spielenmitlili.com/SpielenmitLili/deutschebahntodb/ und das Programm anschließend neu zu starten bevor du fortfährst");
+                Console.WriteLine(currentTime + " | Drücke beliebige Taste um fortzufahren!!!");
+                Console.WriteLine("#############################################################################");
+                
+                //Warten auf Tastendruck
+                Console.ReadKey();
+            }
+            
+            Console.WriteLine(" ");
         }
     }
 }
