@@ -10,12 +10,17 @@ Anschließend kann mit diesen Daten weiter gearbeitet werden.
 
 Bitte beachte, dass die Tabellen **bei jedem Durchlauf neu generiert werden**. Damit werden Änderungen die direkt an den Tabellen durchgeführt werden gelöscht!
 
+Sollte es dazu kommen, dass dein Computer keine Daten aus einer der übermittelten Dateien empfangen kann, so wird die Tabelle nicht bearbeitet und du bekommst eine Rückmeldung
+
 ## Welche Daten können abgerufen werden?
 
-Zum aktuellen Zeitpunkt können folgende Daten abgerufen werden. 
+Zum aktuellen Zeitpunkt können unter anderem folgende Daten abgerufen werden. 
 
 - **Reisezentren** (Adressen, Öffnungszeiten, ... von Reisezentren der DB AG in Deutschland)
 - **Bahnhöfe** (Abkürzungen, Adressen, ... von Bahnhöfen der DB AG in Deutschland)
+- **Aufzüge** (Standort, Anzahl, ... der Aufzüge an unterschiedlichen Standorten)
+- **Bahnsteige** (Höhe, Anzahl, ... der Bahnsteige an unterschiedlichen Bahnhöfen)
+- **Serviceeinrichtungen** (Standort, Typ, ... der Serviceeinrichtungen der DB AG)
 
 ## Wie wird dieses Programm verwendet
 
@@ -35,6 +40,10 @@ So müssen in der Datei `program.cs` die Zugangsdaten für die Datenbank eingetr
 **Nuget-Pakete**
 
 - Für die Nutzung des Programs muss ein Nuget-Paket installiert sein. Dieses Paket ist: **`MySqlConnector`**. Bei der Entwicklung des Programms wurde die Funktionstüchtigkeit mithilfe der Version `2.3.0-beta.1` getestet
+
+## Update
+
+Das Programm verfügt über eine Sequenz zu Software-Update. Dabei wird geprüft, ob das Programm in der neusten Version vorliegt oder nicht. Dementsprechend wird eine kurze Rückmeldung in die Konsole abgegeben, sodass der Benutzer Bescheid weiß, ob es aktuell ist oder nicht
 
 ## Ergebnisse
 
